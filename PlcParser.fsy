@@ -1,0 +1,142 @@
+%{
+ open Absyn
+ open ParAux
+%}
+
+%token <int> CSTINT      
+%token <string> NAME
+%token <bool> CSTBOOL
+
+/*      Unit  Bool  Int  List  Tuple  ->     */
+%token  UNIT  BOOL  INT  LIST  TUPLE  ARROW 
+
+/*      =>      fn  end  */
+%token  DARROW  FN  END      
+
+/*      var  fun  rec  */
+%token  VAR  FUN  REC
+
+/*      if  then  else  */
+%token  IF  THEN  ELSE 
+
+/*      !    &&   */
+%token  NOT  AND
+
+/*      ::    hd    tl    ise  */
+%token  CONS  HEAD  TAIL  ISE                   
+
+/*      print  */
+%token  PRINT
+
+/*      +     -      *      /     */
+%token  PLUS  MINUS  TIMES  DIV
+
+/*      =   !=   <   <=   */
+%token  EQ  NEQ  LT  LTE
+
+/*      (     )     {       }       [       ]       */
+%token  LPAR  RPAR  LBRACE  RBRACE  LBRACK  RBRACK
+
+/*      #     ,      :      ;      */
+%token  HASH  COMMA  COLON  SEMIC
+
+%token EOF
+
+
+%right SEMIC ARROW
+%nonassoc IF
+%left ELSE              
+%left EQ NEQ
+%left LT LTE
+%right CONS
+%left PLUS MINUS
+%left TIMES DIV AND
+%nonassoc NOT HEAD TAIL ISE PRINT NAME
+%left HASH          
+
+%start Main
+%type <Absyn.expr> Main 
+
+%%
+
+/*  Add production rules below */
+Main:
+  LetExpr EOF  { $1 }
+;
+
+Declaration:
+    VAR NAME EQ Expr SEMIC                                     
+  | FUN NAME Args EQ Expr SEMIC                           {               }
+  | FUN REC NAME Args COLON Type EQ Expr                  {               }
+
+Expr:
+    AtomicExpr
+  | AppExpr
+  | IF Expr THEN Expr ELSE Expr
+  | NOT Expr
+  | MINUS Expr
+  | HD Expr 
+  | TL Expr 
+  | PRINT Expr
+  | ISE Expr
+  | Expr PLUS Expr
+  | Expr MINUS Expr
+  | Expr TIMES Expr
+  | Expr DIV Expr
+  | Expr EQ Expr
+  | Expr NEQ Expr
+  | Expr LT Expr
+  | Expr LTE EQ Expr
+  | Expr CONS Expr
+  | Expr SEMIC Expr
+  | Expr HASH Nat(?)
+
+AtomicExpr:
+    Const
+  | NAME
+  | LBRACE Prog RBRACE
+  | LPAR Expr RPAR
+  | LPAR Comps RPAR
+  | FN Args DARROW Expr END
+
+AppExpr:
+    AtomicExpr Atomic Expr
+  | AppExpr AtomicExpr
+
+Const:
+    TRUE ??
+  | FALSE  ??
+  | NAT
+  | LPAR RPAR
+  | LPAR LBRACK RBRACK COLON Type RPAR
+
+Comps:
+    Expr COMMA Expr
+  | Expr COMMA Comps
+
+Args:
+    LPAR RPAR
+  | LPAR Params RPAR
+
+Params:
+    TypedVar
+  | TypedVar COMMA Params
+
+TypedVar:
+    NAME COLON Type
+
+Type:
+    AtomicType
+  | TUPLE LBRACK Types RBRACK
+  | LIST LBRACK Types RBRACK
+  | Type ARROW Type
+
+AtomicType:
+    UNIT
+  | BOOL
+  | INT
+  | LPAR Type RPAR
+
+Types:
+    Type COMMA Type
+  | Type COMMA Types
